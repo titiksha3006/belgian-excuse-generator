@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>🇧🇪 Belgian Excuse Generator</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #111 0%, #333 50%, #f5c400 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: #222;
+    }
+
+    .card {
+      width: min(100%, 600px);
+      background: white;
+      padding: 35px 25px;
+      border-radius: 28px;
+      box-shadow: 0 20px 60px #0006;
+      text-align: center;
+    }
+
+    .flag {
+      font-size: 55px;
+    }
+
+    h1 {
+      margin: 8px 0;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    #excuse {
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f1e8;
+      border-radius: 18px;
+      padding: 20px;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 6px 0;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #generate {
+      background: #111;
+      color: white;
+    }
+
+    #save {
+      background: #f5c400;
+      color: #111;
+    }
+
+    button:active {
+      transform: scale(.98);
+    }
+
+    #message {
+      margin: 12px 0;
+      font-weight: 600;
+      min-height: 24px;
+    }
+
+    #favorites {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .favorite {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .number {
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <div class="flag">🇧🇪</div>
+
+  <h1>Belgian Excuse Generator</h1>
+
+  <div class="subtitle">
+    Need an excuse?<br>
+    Belgium has you covered.
+  </div>
+
+  <div id="excuse">
+    Press the button. Your excuse awaits.
+  </div>
+
+  <button id="generate" onclick="generateExcuse()">
+    🎲 Generate an excuse
+  </button>
+
+  <button id="save" onclick="saveExcuse()">
+    ❤️ Save this excuse
+  </button>
+
+  <div id="message"></div>
+
+  <div id="favorites">
+    <h3>🏆 Most popular excuses</h3>
+    <div id="ranking">Loading...</div>
+  </div>
+
+</div>
+
+<script>
+
+let currentExcuse = "";
+
+async function generateExcuse() {
+
+  const response = await fetch("/api/excuse");
+  const data = await response.json();
+
+  currentExcuse = data.excuse;
+
+  document.getElementById("excuse").textContent =
+    "🇧🇪 " + currentExcuse;
+
+  document.getElementById("message").textContent = "";
+}
+
+async function saveExcuse() {
+
+  if (!currentExcuse) {
+    document.getElementById("message").textContent =
+      "Generate an excuse first! 😄";
+    return;
+  }
+
+  const response = await fetch("/api/save", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      excuse: currentExcuse
+    })
+  });
+
+  if (response.ok) {
+
+    document.getElementById("message").textContent =
+      "❤️ Saved! Belgium approves.";
+
+    loadFavorites();
+  }
+}
+
+async function loadFavorites() {
+
+  const response = await fetch("/api/favorites");
+  const results = await response.json();
+
+  if (!results.length) {
+    document.getElementById("ranking").innerHTML =
+      "<p>No excuses saved yet.</p>";
+    return;
+  }
+
+  document.getElementById("ranking").innerHTML =
+    results.map((item, index) => `
+      <div class="favorite">
+        <span>
+          <span class="number">${index + 1}.</span>
+          ${item.excuse}
+        </span>
+        <strong>❤️ ${item.likes}</strong>
+      </div>
+    `).join("");
+}
+
+loadFavorites();
+
+</script>
+
+</body>
+</html>
